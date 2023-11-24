@@ -1,12 +1,18 @@
-import mysql.connector
 import tkinter
 from tkinter import *
+import mysql.connector
+
+with open("variables.txt", "r") as file:
+    variables = file.read().split()
+hostogo, usertogo, passwtogo, basetogo = variables
+
+print("Received variables:", hostogo, usertogo, passwtogo, basetogo)
 
 db = mysql.connector.connect(
-    host="192.168.0.134",
-    user="remote",
-    passwd="remote",
-    database="FEETBOOKER"
+    host=hostogo,
+    user=usertogo,
+    passwd=passwtogo,
+    database=basetogo
 )
 
 kurzor = db.cursor()
@@ -24,14 +30,13 @@ def trybooking():
         timeD = click2.get()
         sizeD = click3.get()
 
+        namecheck = """select name from storeroom where name = %s""" % (nameD)
         limit = """select amount from storeroom where bootsize = %s""" % (sizeD)
-        limitRes = kurzor.execute(limit)
-        for x in kurzor:
-            limitRes = x
+        kurzor.execute(limit)
+        limitRes = kurzor.fetchone()
         amount = """select count(*) from bookers where feet = '%s' and datum = '%s' and ido = '%s'""" % (sizeD, dayD, timeD)
-        amountRes = kurzor.execute(amount)
-        for x in kurzor:
-            amountRes = x
+        kurzor.execute(amount)
+        amountRes = kurzor.fetchone()
 
         if amountRes < limitRes:
             executebook.place(x=300, y=250)
@@ -40,13 +45,13 @@ def trybooking():
             dayshow.config(text="" + dayD)
             sizeshow.config(text="" + sizeD)
             notify.config(text="Kérem ellenőrizze a megadott adatokat!" , fg="#aa0000")
-        if amountRes >= limitRes:
+        else:
             executebook.place(x=3000, y=2500)
             nameshow.config(text="err")
             dayshow.config(text="err")
             timeshow.config(text="err")
             sizeshow.config(text="err")
-            notify.config(text="A megadott méret az adott időpontban nem elérhető!")
+            notify.config(text="A megadott méret az adott időpontban nem elérhető!", fg="#aa0000")
 
     except ValueError:
         nameshow.config(text="err")
@@ -60,17 +65,17 @@ def executebooking():
     timeD = click2.get()
     sizeD = click3.get()
 
-    nameshow.config(text="")
-    dayshow.config(text="")
-    timeshow.config(text="")
-    sizeshow.config(text="")
-    notify.config(text="Sikeres Foglalás!", fg="#00ff00")
-
     nameins.delete(0, END)
     click1.set("Nap")
     click2.set("Idő")
     click3.set("Méret")
     executebook.place(x=3000, y=2500)
+
+    nameshow.config(text="")
+    dayshow.config(text="")
+    timeshow.config(text="")
+    sizeshow.config(text="")
+    notify.config(text="Sikeres Foglalás!", fg="#00ff00")
 
     try:
         kurzor.execute("INSERT INTO bookers VALUES (%s, %s, %s, %s)", (nameD, dayD, timeD, sizeD))
@@ -82,7 +87,7 @@ def executebooking():
         timeshow.config(text="err")
         sizeshow.config(text="err")
 
-title= Label(booking,text="Online Cipőfoglalás",font=("arial",40),bg="#777777",fg="#000000")
+title= Label(booking,text="Cipőfoglalás",font=("arial",40),bg="#777777",fg="#000000")
 title.place(x=20,y=10)
 
 name= Label(booking,text="Név: ",font=("arial",0),bg="#777777",fg="#000000")
@@ -126,4 +131,3 @@ notify = Label(booking,text="",font=("arial",13),bg="#777777",fg="#aa0000")
 notify.place(x=50,y=310)
 
 booking.mainloop()
-
